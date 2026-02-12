@@ -1,0 +1,6 @@
+gunicorn
+gspread
+oauth2client
+opencv-python
+numpy
+pyzbar
