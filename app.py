@@ -26,7 +26,7 @@ def buscar_turmas_google():
 	dados = ws.get('B7:N20')
 	colunas = [
 		'BLOCO', 'CURSOS', 'INICIO', 'FIM', 'DURACAO', 'VAGAS', 'CONVERSAO',
-		'MODALIDADE', 'HORARIO', 'LOCAL', 'OBSERVACAO', '', '', ''
+		'MODALIDADE', 'HORARIO', 'LOCAL', 'OBSERVACAO'
 	]
 	df = pd.DataFrame(dados, columns=colunas)
 	return df
