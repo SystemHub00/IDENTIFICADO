@@ -162,9 +162,9 @@ IDS_CSV = os.path.join(BASE_DIR, "IDS.csv")
 PRESENCAS_CSV = os.path.join(BASE_DIR, "IDS-presenças.csv")
 LOGO_PATH = os.path.join(BASE_DIR, "assets", "logo.png")
 
-CAMINHO_CREDENCIAL = "C:/Users/lucas/OneDrive/Documentos/GitHub/F10-Software/Banco-De-Dados/Banco-De-Dados/Luziânia/n8n-credenciais-459013-b4f1ae5dd3c4.json"
-PLANILHA_ID = "1z4IoxPNgEnL0hLgC5eriOkINmHfcjm99lsZRoE2UYq0"
-NOME_ABA_DESTINO = "PRESENÇAS CONFIRMADAS - PAUTAS"
+CAMINHO_CREDENCIAL = "plated-field-474017-b8-e00d977b2612.json"
+PLANILHA_ID = "1M4p8VgUiqvER8PPb0wttqKl7VfxEy7qtShKEWUbVx8M"
+NOME_ABA_DESTINO = "presença"
 
 # Cores
 COR_AZUL_ESCURO = "#0A1E3F"
@@ -220,8 +220,10 @@ def enviar_linha_para_planilha(presente, id_encontrado):
 			primeira = None
 		if not primeira:
 			sheet.update('A1:B1', [['PRESENTE', 'ID']])
-		# Envia linha de presença
-		sheet.append_row([presente, id_encontrado], value_input_option='RAW')
+		# Encontra próxima linha vazia
+		values = sheet.get_all_values()
+		next_row = len(values) + 1
+		sheet.update(f'A{next_row}:B{next_row}', [[presente, id_encontrado]])
 		print('PRESENÇA LANÇADA NO GOOGLE SHEETS')
 	except Exception as e:
 		print(f'Não foi possível gravar no Google Sheets: {e}')
