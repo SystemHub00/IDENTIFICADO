@@ -18,13 +18,14 @@ def pagina_inicial():
 	return render_template('bemvindo.html')
 
 def buscar_turmas_google():
-	scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-	creds = ServiceAccountCredentials.from_json_keyfile_name('plated-field-474017-b8-e00d977b2612.json', scope)
-	client = gspread.authorize(creds)
-	sheet = client.open_by_key('1L3__zibMom2PjBN0nloVq44sM45OURncv4sxh8V6FuY')
-	ws = sheet.worksheet('CRONOGRAMA')
-	dados = ws.get('A7:N51')
-	df = pd.DataFrame(dados[1:], columns=dados[0])
+	# MOCK: Turmas locais para teste
+	colunas = ['A', 'B', 'Turma', 'Inicio', 'Fim', 'E', 'Vagas', 'G', 'H', 'Dia', 'Modalidade', 'Horario', 'Local', 'Obs']
+	turmas_mock = [
+		['-', '-', 'Administração 1', '08:00', '10:00', '-', '30', '-', '-', '25/02/2026', 'Presencial', '08:00-10:00', 'Sala 1', 'Nenhuma'],
+		['-', '-', 'Contabilidade 2', '10:30', '12:00', '-', '25', '-', '-', '25/02/2026', 'Online', '10:30-12:00', 'Sala 2', 'Atenção'],
+		['-', '-', 'RH 3', '13:00', '15:00', '-', '20', '-', '-', '25/02/2026', 'Presencial', '13:00-15:00', 'Sala 3', ''],
+	]
+	df = pd.DataFrame(turmas_mock, columns=colunas)
 	return df
 
 
