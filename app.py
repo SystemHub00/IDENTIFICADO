@@ -41,19 +41,18 @@ def buscar_turmas_google():
 def gerar_turmas_context(turmas_df):
 	turmas = []
 	for idx in range(len(turmas_df)):
-		row = turmas_df.iloc[idx].tolist()
-		if len(row) > 13:
-			turma = {
-				'nome': row[2],
-				'horario': row[11],
-				'local': row[12],
-				'inicio': row[3],
-				'fim': row[4],
-				'vagas': row[6],
-				'modalidade': row[10],
-				'obs': row[13],
-			}
-			turmas.append(turma)
+		row = turmas_df.iloc[idx]
+		turma = {
+			'nome': row['C'],
+			'inicio': row['D'],
+			'fim': row['E'],
+			'vagas': row['F'],
+			'modalidade': row['K'],
+			'local': row['L'],
+			'horario': row['K'],
+			'obs': row['N'],
+		}
+		turmas.append(turma)
 	return turmas
 
 
@@ -121,18 +120,17 @@ def registrar():
 	proxima_turma = None
 	for idx in range(len(turmas_df)):
 		row = turmas_df.iloc[idx]
-		if len(row) > 13:
-			turma_nome = row[2]
-			horario = row[11]
-			inicio = row[3]
-			fim = row[4]
-			if curso.lower() in turma_nome.lower():
-				# Verifica se o horário atual está dentro do horário da turma
-				if inicio <= agora <= fim:
-					turma_encontrada = f"{turma_nome} - {horario}"
-					break
-				elif not proxima_turma or inicio > agora:
-					proxima_turma = f"{turma_nome} - {horario} (Início: {inicio})"
+		turma_nome = row['C']
+		horario = row['K']
+		inicio = row['D']
+		fim = row['E']
+		if curso.lower() in turma_nome.lower():
+			# Verifica se o horário atual está dentro do horário da turma
+			if inicio <= agora <= fim:
+				turma_encontrada = f"{turma_nome} - {horario}"
+				break
+			elif not proxima_turma or inicio > agora:
+				proxima_turma = f"{turma_nome} - {horario} (Início: {inicio})"
 	if turma_encontrada:
 		salvar_presenca_local(id_encontrado, turma_encontrada)
 		return jsonify({'sucesso': True, 'mensagem': f'Presença registrada na turma: {turma_encontrada}'}), 200
