@@ -1,19 +1,139 @@
+
 import os
 import csv
-
-def salvar_presenca_local(id_encontrado):
-	csv_path = r"C:\Users\lucas\OneDrive\Documentos\IDENTIFICADO\PRESENÇA.csv"
-	# Garante cabeçalho
-	if not os.path.exists(csv_path) or os.path.getsize(csv_path) == 0:
-		with open(csv_path, 'w', newline='', encoding='utf-8') as f:
-			writer = csv.writer(f)
-			writer.writerow(['PRESENTE', 'ID'])
-	with open(csv_path, 'a', newline='', encoding='utf-8') as f:
-		writer = csv.writer(f)
-		writer.writerow(['SIM', id_encontrado])
-from flask import Flask, request, jsonify, render_template_string
+alunos = {
+	"123456789101": {"nome": "lucas", "curso": "administração"}
+}
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+import pandas as pd
+from flask import Flask, request, jsonify, render_template_string, redirect, url_for, session
 
 app = Flask(__name__)
+app.secret_key = 'chave-secreta-para-session'
+
+# Página inicial
+@app.route('/inicio', methods=['GET'])
+def pagina_inicial():
+	html = '''
+	<!DOCTYPE html>
+	<html lang="pt-br">
+	<head>
+		<meta charset="UTF-8">
+		<title>Bem-vindo</title>
+		<style>
+			body { background: #0A1E3F; color: #fff; font-family: Arial, sans-serif; text-align: center; }
+			.container { margin-top: 120px; }
+			.bemvindo-btn {
+				background: #7A0B0B;
+				color: #fff;
+				border: none;
+				padding: 32px 80px;
+				font-size: 2em;
+				border-radius: 12px;
+				cursor: pointer;
+				transition: background 0.2s;
+			}
+			.bemvindo-btn:hover { background: #9C1A1A; }
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<form method="get" action="/turmas">
+				<button class="bemvindo-btn" type="submit">BEM VINDO</button>
+			</form>
+		</div>
+	</body>
+	</html>
+	'''
+	return render_template_string(html)
+
+def buscar_turmas_google():
+	scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+	creds = ServiceAccountCredentials.from_json_keyfile_name('plated-field-474017-b8-e00d977b2612 copy.json', scope)
+	client = gspread.authorize(creds)
+	sheet = client.open_by_key('1L3__zibMom2PjBN0nloVq44sM45OURncv4sxh8V6FuY')
+	ws = sheet.worksheet('CRONOGRAMA')
+	dados = ws.get('A7:N51')
+	df = pd.DataFrame(dados[1:], columns=dados[0])
+	return df
+
+def gerar_html_turmas(turmas_df):
+	html = '''<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+	<meta charset="UTF-8">
+	<title>Escolha a Turma</title>
+	<style>
+		body { background: #0A1E3F; color: #fff; font-family: Arial, sans-serif; text-align: center; }
+		.container { margin-top: 40px; }
+		.cards { display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; }
+		.card {
+			background: #16244d;
+			color: #fff;
+			border-radius: 12px;
+			box-shadow: 0 4px 16px #0006;
+			padding: 24px 18px;
+			width: 340px;
+			margin-bottom: 20px;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+		}
+		.card h2 { font-size: 1.3em; margin-bottom: 8px; }
+		.card p { font-size: 1em; margin: 4px 0; }
+		.card button {
+			background: #7A0B0B;
+			color: #fff;
+			border: none;
+			padding: 12px 32px;
+			font-size: 1.1em;
+			border-radius: 8px;
+			cursor: pointer;
+			margin-top: 12px;
+			transition: background 0.2s;
+		}
+		.card button:hover { background: #9C1A1A; }
+		.filtro-form { margin-bottom: 30px; }
+		.filtro-form label { margin: 0 8px; }
+		.filtro-form input, .filtro-form select { padding: 6px; border-radius: 4px; border: none; }
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1>Escolha a Turma</h1>
+		<!-- Filtro automático removido, painel exibe turmas do horário/dia atual -->
+		<div class="cards">
+'''
+	for idx in range(len(turmas_df)):
+		row = turmas_df.iloc[idx].tolist()
+		if len(row) > 13:
+			turma_nome = row[2]
+			horario = row[11]
+			local = row[12]
+			inicio = row[3]
+			fim = row[4]
+			vagas = row[6]
+			modalidade = row[10]
+			obs = row[13]
+			html += f'''
+			<form method="post" action="/selecionar_turma">
+				<div class="card">
+					<h2>{turma_nome}</h2>
+					<p><b>Início:</b> {inicio} | <b>Fim:</b> {fim}</p>
+					<p><b>Horário:</b> {horario}</p>
+					<p><b>Local:</b> {local}</p>
+					<p><b>Vagas:</b> {vagas} | <b>Modalidade:</b> {modalidade}</p>
+					<p><b>Obs:</b> {obs}</p>
+					<button type="submit" name="turma" value="{turma_nome} - {horario}">Selecionar</button>
+				</div>
+			</form>
+			'''
+	html += '''        </div>
+	</div>
+</body>
+</html>'''
+	return html
 
 HTML_INDEX = '''
 <!DOCTYPE html>
@@ -33,7 +153,8 @@ HTML_INDEX = '''
 <body>
 	<div class="container">
 		<h1>Registro de Presença</h1>
-		<video id="video" width="640" height="480" autoplay></video>
+		<video id="video" width="640" height="480" autoplay style="display:none;"></video>
+		<button id="btn-iniciar" style="margin-top:30px;">INICIAR</button>
 		<form id="form-presenca" method="post" action="/registrar">
 			<input type="hidden" name="id" id="id-input">
 			<button type="submit" style="display:none">Registrar</button>
@@ -48,10 +169,13 @@ HTML_INDEX = '''
 		const resultado = document.getElementById('resultado');
 		const idInput = document.getElementById('id-input');
 		const form = document.getElementById('form-presenca');
+		const btnIniciar = document.getElementById('btn-iniciar');
 
 		const CODIGO_ESPERADO = '123456789101';
 
 		function startCamera() {
+			btnIniciar.style.display = 'none';
+			video.style.display = '';
 			codeReader.decodeFromVideoDevice(null, 'video', (result, err) => {
 				if (result) {
 					console.log('Valor lido pelo QR Code:', result.text);
@@ -80,6 +204,9 @@ HTML_INDEX = '''
 			.then(data => {
 				if (data.sucesso) {
 					resultado.innerText = data.mensagem;
+					// Exibe novamente o botão INICIAR e esconde o vídeo
+					btnIniciar.style.display = '';
+					video.style.display = 'none';
 				} else {
 					resultado.innerText = data.mensagem || 'Erro ao registrar.';
 				}
@@ -89,7 +216,7 @@ HTML_INDEX = '''
 			});
 		}
 
-		window.onload = () => {
+		btnIniciar.onclick = () => {
 			startCamera();
 		};
 	</script>
@@ -97,24 +224,124 @@ HTML_INDEX = '''
 </html>
 '''
 
-@app.route('/')
-def home():
+
+@app.route('/turmas', methods=['GET'])
+def escolher_turma():
+	import datetime
+	turmas_df = buscar_turmas_google()
+	agora = datetime.datetime.now()
+	dia_atual = agora.strftime('%d/%m/%Y')
+	hora_atual = agora.strftime('%H:%M')
+	turmas_filtradas = []
+	for idx in range(len(turmas_df)):
+		row = turmas_df.iloc[idx]
+		try:
+			inicio = row[3].strip() if len(row) > 3 else ''
+			fim = row[4].strip() if len(row) > 4 else ''
+			dia = row[9].strip() if len(row) > 9 else ''
+			if inicio and fim:
+				hora_inicio = datetime.datetime.strptime(inicio, '%H:%M').time()
+				hora_fim = datetime.datetime.strptime(fim, '%H:%M').time()
+				hora_atual_obj = agora.time()
+				if hora_inicio <= hora_atual_obj <= hora_fim:
+					if not dia or dia == dia_atual:
+						turmas_filtradas.append(row)
+		except Exception:
+			continue
+	turmas_df_filtrado = pd.DataFrame(turmas_filtradas, columns=turmas_df.columns)
+	html_turmas = gerar_html_turmas(turmas_df_filtrado)
+	return render_template_string(html_turmas)
+
+# Recebe turma escolhida e redireciona para registro
+@app.route('/selecionar_turma', methods=['POST'])
+def selecionar_turma():
+	turma = request.form.get('turma')
+	if not turma:
+		return redirect(url_for('escolher_turma'))
+	session['turma'] = turma
+	return redirect(url_for('pagina_cartinha'))
+# Página de bater cartinha
+@app.route('/cartinha', methods=['GET'])
+def pagina_cartinha():
+	html = '''
+	<!DOCTYPE html>
+	<html lang="pt-br">
+	<head>
+		<meta charset="UTF-8">
+		<title>Bater Cartinha</title>
+		<style>
+			body { background: #0A1E3F; color: #fff; font-family: Arial, sans-serif; text-align: center; }
+			.container { margin-top: 80px; }
+			.cartinha-btn {
+				background: #7A0B0B;
+				color: #fff;
+				border: none;
+				padding: 24px 60px;
+				font-size: 1.5em;
+				border-radius: 10px;
+				cursor: pointer;
+				transition: background 0.2s;
+			}
+			.cartinha-btn:hover { background: #9C1A1A; }
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<h1>Bater Cartinha</h1>
+			<p>Turma selecionada: <b>{}</b></p>
+			<button class="cartinha-btn">BATER CARTINHA</button>
+		</div>
+	</body>
+	</html>
+	'''.format(session.get('turma', 'Nenhuma'))
+	return render_template_string(html)
+
+# Página de registro de presença
+@app.route('/registro', methods=['GET'])
+def pagina_registro():
+	if 'turma' not in session:
+		return redirect(url_for('escolher_turma'))
 	return render_template_string(HTML_INDEX)
 
+
+# API para registrar presença (usada pelo JS)
 @app.route('/registrar', methods=['POST'])
 def registrar():
 	data = request.get_json()
 	id_encontrado = data.get('id') if data else None
 	if not id_encontrado:
 		return jsonify({'sucesso': False, 'mensagem': 'ID não informado.'})
-	print(f'Valor recebido do QR Code: {id_encontrado}')
-	if id_encontrado != '123456789101':
-		return jsonify({'sucesso': False, 'mensagem': 'QR Code não autorizado.'}), 403
-	try:
-		salvar_presenca_local(id_encontrado)
-		return jsonify({'sucesso': True, 'mensagem': 'Presença registrada com sucesso!'}), 200
-	except Exception as e:
-		return jsonify({'sucesso': False, 'mensagem': f'Erro ao registrar: {e}'}), 500
+	aluno = alunos.get(id_encontrado)
+	if not aluno:
+		return jsonify({'sucesso': False, 'mensagem': 'Aluno não encontrado.'}), 403
+	curso = aluno['curso']
+	turmas_df = buscar_turmas_google()
+	from datetime import datetime
+	agora = datetime.now().strftime('%H:%M')
+	turma_encontrada = None
+	proxima_turma = None
+	for idx in range(len(turmas_df)):
+		row = turmas_df.iloc[idx]
+		if len(row) > 13:
+			turma_nome = row[2]
+			horario = row[11]
+			inicio = row[3]
+			fim = row[4]
+			if curso.lower() in turma_nome.lower():
+				# Verifica se o horário atual está dentro do horário da turma
+				if inicio <= agora <= fim:
+					turma_encontrada = f"{turma_nome} - {horario}"
+					break
+				elif not proxima_turma or inicio > agora:
+					proxima_turma = f"{turma_nome} - {horario} (Início: {inicio})"
+	if turma_encontrada:
+		salvar_presenca_local(id_encontrado, turma_encontrada)
+		return jsonify({'sucesso': True, 'mensagem': f'Presença registrada na turma: {turma_encontrada}'}), 200
+	else:
+		msg = f'Não há turma de {curso} para você neste horário.'
+		if proxima_turma:
+			msg += f' Próxima turma: {proxima_turma}'
+		return jsonify({'sucesso': False, 'mensagem': msg}), 200
 
 if __name__ == '__main__':
 	app.run(host='0.0.0.0', port=10000)
@@ -212,8 +439,6 @@ COR_VERMELHO_HOVER = "#9C1A1A"
 COR_BRANCO = "#FFFFFF"
 
 
-
-
 def carregar_ids():
 	try:
 		with open(IDS_CSV, newline='', encoding='utf-8') as f:
@@ -230,16 +455,18 @@ def garantir_cabecalho_csv():
 			writer.writerow(cabecalho)
 
 
-def salvar_presenca_local(id_encontrado):
+def salvar_presenca_local(id_encontrado, turma):
+	import datetime
+	hora = datetime.datetime.now().strftime('%H:%M:%S')
 	csv_path = r"C:\Users\lucas\OneDrive\Documentos\IDENTIFICADO\PRESENÇA.csv"
 	# Garante cabeçalho
 	if not os.path.exists(csv_path) or os.path.getsize(csv_path) == 0:
 		with open(csv_path, 'w', newline='', encoding='utf-8') as f:
 			writer = csv.writer(f)
-			writer.writerow(['PRESENTE', 'ID'])
+			writer.writerow(['PRESENTE', 'ID', 'HORA', 'TURMA'])
 	with open(csv_path, 'a', newline='', encoding='utf-8') as f:
 		writer = csv.writer(f)
-		writer.writerow(['SIM', id_encontrado])
+		writer.writerow(['SIM', id_encontrado, hora, turma])
 
 
 def enviar_linha_para_planilha(presente, id_encontrado):
@@ -328,19 +555,6 @@ def _tentar_pharmacode(frame):
 		return valor, (x,y,w,h)
 	except Exception:
 		return None, None
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 # Função para identificar código sem interface gráfica

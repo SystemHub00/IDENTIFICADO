@@ -43,7 +43,7 @@ def carregar_ids():
 
 
 def garantir_cabecalho_csv():
-	cabecalho = ['PRESENTE', 'ID']
+	cabecalho = ['PRESENTE', 'ID', 'HORA', 'TURMA']
 	if not os.path.exists(PRESENCAS_CSV) or os.path.getsize(PRESENCAS_CSV) == 0:
 		with open(PRESENCAS_CSV, 'w', newline='', encoding='utf-8') as f:
 			writer = csv.writer(f)
@@ -53,13 +53,16 @@ def garantir_cabecalho_csv():
 def salvar_presenca_local(id_encontrado):
 	csv_path = r"C:\Users\lucas\OneDrive\Documentos\IDENTIFICADO\PRESENÇA.csv"
 	# Garante cabeçalho
+	import datetime
+	turma = '05/dev'
+	hora = datetime.datetime.now().strftime('%H:%M:%S')
 	if not os.path.exists(csv_path) or os.path.getsize(csv_path) == 0:
 		with open(csv_path, 'w', newline='', encoding='utf-8') as f:
 			writer = csv.writer(f)
-			writer.writerow(['PRESENTE', 'ID'])
+			writer.writerow(['PRESENTE', 'ID', 'HORA', 'TURMA'])
 	with open(csv_path, 'a', newline='', encoding='utf-8') as f:
 		writer = csv.writer(f)
-		writer.writerow(['SIM', id_encontrado])
+		writer.writerow(['SIM', id_encontrado, hora, turma])
 
 
 def enviar_linha_para_planilha(presente, id_encontrado):
