@@ -29,9 +29,10 @@ def buscar_turmas_google():
 	# Turmas de exemplo para teste
 	colunas = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N']
 	turmas_exemplo = [
-		['','','Administração','08:00','10:00','','','','','','Presencial','Sala 1','','Aula de Introdução'],
-		['','','Informática','10:00','12:00','','','','','','Online','Sala 2','','Laboratório'],
-		['','','Enfermagem','14:00','16:00','','','','','','','','Sala 3','','Prática'],
+		# nome, horario, local, inicio, fim, vagas, modalidade, obs
+		['','','Administração','08:00','10:00','30','','','','','Presencial','Sala 1','','Aula de Introdução'],
+		['','','Informática','10:00','12:00','25','','','','','Online','Sala 2','','Laboratório'],
+		['','','Enfermagem','14:00','16:00','20','','','','','Presencial','Sala 3','','Prática'],
 	]
 	df = pd.DataFrame(turmas_exemplo, columns=colunas)
 	return df
