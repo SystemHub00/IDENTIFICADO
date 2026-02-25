@@ -18,23 +18,17 @@ def pagina_inicial():
 	return render_template('bemvindo.html')
 
 def buscar_turmas_google():
-	# scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-	# creds = ServiceAccountCredentials.from_json_keyfile_name('plated-field-474017-b8-e00d977b2612.json', scope)
-	# client = gspread.authorize(creds)
-	# sheet = client.open_by_key('1L3__zibMom2PjBN0nloVq44sM45OURncv4sxh8V6FuY')
-	# ws = sheet.worksheet('CRONOGRAMA')
-	# dados = ws.get('A7:N51')
-	# df = pd.DataFrame(dados[1:], columns=dados[0])
-	# return df
-	# Turmas de exemplo para teste
-	colunas = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N']
-	turmas_exemplo = [
-		# nome, horario, local, inicio, fim, vagas, modalidade, obs
-		['','','Administração','08:00','10:00','30','','','','','Presencial','Sala 1','','Aula de Introdução'],
-		['','','Informática','10:00','12:00','25','','','','','Online','Sala 2','','Laboratório'],
-		['','','Enfermagem','14:00','16:00','20','','','','','Presencial','Sala 3','','Prática'],
+	scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+	creds = ServiceAccountCredentials.from_json_keyfile_name('plated-field-474017-b8-e00d977b2612.json', scope)
+	client = gspread.authorize(creds)
+	sheet = client.open_by_key('1M4p8VgUiqvER8PPb0wttqKl7VfxEy7qtShKEWUbVx8M')
+	ws = sheet.worksheet('MAPA DE TURMAS')
+	dados = ws.get('B7:N20')
+	colunas = [
+		'BLOCO', 'CURSOS', 'INICIO', 'FIM', 'DURACAO', 'VAGAS', 'CONVERSAO',
+		'MODALIDADE', 'HORARIO', 'LOCAL', 'OBSERVACAO', '', '', ''
 	]
-	df = pd.DataFrame(turmas_exemplo, columns=colunas)
+	df = pd.DataFrame(dados, columns=colunas)
 	return df
 
 
@@ -43,14 +37,14 @@ def gerar_turmas_context(turmas_df):
 	for idx in range(len(turmas_df)):
 		row = turmas_df.iloc[idx]
 		turma = {
-			'nome': row['C'],
-			'inicio': row['D'],
-			'fim': row['E'],
-			'vagas': row['F'],
-			'modalidade': row['K'],
-			'local': row['L'],
-			'horario': row['K'],
-			'obs': row['N'],
+			'nome': row['CURSOS'],
+			'inicio': row['INICIO'],
+			'fim': row['FIM'],
+			'vagas': row['VAGAS'],
+			'modalidade': row['MODALIDADE'],
+			'local': row['LOCAL'],
+			'horario': row['HORARIO'],
+			'obs': row['OBSERVACAO'],
 		}
 		turmas.append(turma)
 	return turmas
@@ -120,10 +114,10 @@ def registrar():
 	proxima_turma = None
 	for idx in range(len(turmas_df)):
 		row = turmas_df.iloc[idx]
-		turma_nome = row['C']
-		horario = row['K']
-		inicio = row['D']
-		fim = row['E']
+		turma_nome = row['CURSOS']
+		horario = row['HORARIO']
+		inicio = row['INICIO']
+		fim = row['FIM']
 		if curso.lower() in turma_nome.lower():
 			# Verifica se o horário atual está dentro do horário da turma
 			if inicio <= agora <= fim:
