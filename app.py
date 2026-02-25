@@ -401,9 +401,6 @@ HTML_INDEX = '''
 </html>
 '''
 
-@app.route('/')
-def home():
-	return render_template_string(HTML_INDEX, resultado='')
 
 @app.route('/registrar', methods=['POST'])
 def registrar():
