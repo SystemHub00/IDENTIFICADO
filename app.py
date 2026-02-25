@@ -343,8 +343,6 @@ def registrar():
 			msg += f' Próxima turma: {proxima_turma}'
 		return jsonify({'sucesso': False, 'mensagem': msg}), 200
 
-if __name__ == '__main__':
-	app.run(host='0.0.0.0', port=10000)
 from flask import Flask, request, jsonify, render_template_string
 
 app = Flask(__name__)
@@ -406,8 +404,6 @@ def registrar():
 	except Exception as e:
 		return jsonify({'sucesso': False, 'mensagem': f'Erro ao registrar: {e}'}), 500
 
-if __name__ == '__main__':
-	app.run(host='0.0.0.0', port=10000)
 
 import os
 import threading
