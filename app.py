@@ -18,14 +18,22 @@ def pagina_inicial():
 	return render_template('bemvindo.html')
 
 def buscar_turmas_google():
-	# MOCK: Turmas locais para teste
-	colunas = ['A', 'B', 'Turma', 'Inicio', 'Fim', 'E', 'Vagas', 'G', 'H', 'Dia', 'Modalidade', 'Horario', 'Local', 'Obs']
-	turmas_mock = [
-		['-', '-', 'Administração 1', '08:00', '10:00', '-', '30', '-', '-', '25/02/2026', 'Presencial', '08:00-10:00', 'Sala 1', 'Nenhuma'],
-		['-', '-', 'Contabilidade 2', '10:30', '12:00', '-', '25', '-', '-', '25/02/2026', 'Online', '10:30-12:00', 'Sala 2', 'Atenção'],
-		['-', '-', 'RH 3', '13:00', '15:00', '-', '20', '-', '-', '25/02/2026', 'Presencial', '13:00-15:00', 'Sala 3', ''],
+	# scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+	# creds = ServiceAccountCredentials.from_json_keyfile_name('plated-field-474017-b8-e00d977b2612.json', scope)
+	# client = gspread.authorize(creds)
+	# sheet = client.open_by_key('1L3__zibMom2PjBN0nloVq44sM45OURncv4sxh8V6FuY')
+	# ws = sheet.worksheet('CRONOGRAMA')
+	# dados = ws.get('A7:N51')
+	# df = pd.DataFrame(dados[1:], columns=dados[0])
+	# return df
+	# Turmas de exemplo para teste
+	colunas = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N']
+	turmas_exemplo = [
+		['','','Administração','08:00','10:00','','','','','','Presencial','Sala 1','','Aula de Introdução'],
+		['','','Informática','10:00','12:00','','','','','','Online','Sala 2','','Laboratório'],
+		['','','Enfermagem','14:00','16:00','','','','','','','','Sala 3','','Prática'],
 	]
-	df = pd.DataFrame(turmas_mock, columns=colunas)
+	df = pd.DataFrame(turmas_exemplo, columns=colunas)
 	return df
 
 
@@ -52,27 +60,28 @@ def gerar_turmas_context(turmas_df):
 def escolher_turma():
 	import datetime
 	turmas_df = buscar_turmas_google()
-	agora = datetime.datetime.now()
-	dia_atual = agora.strftime('%d/%m/%Y')
-	hora_atual = agora.strftime('%H:%M')
-	turmas_filtradas = []
-	for idx in range(len(turmas_df)):
-		row = turmas_df.iloc[idx]
-		try:
-			inicio = row[3].strip() if len(row) > 3 else ''
-			fim = row[4].strip() if len(row) > 4 else ''
-			dia = row[9].strip() if len(row) > 9 else ''
-			if inicio and fim:
-				hora_inicio = datetime.datetime.strptime(inicio, '%H:%M').time()
-				hora_fim = datetime.datetime.strptime(fim, '%H:%M').time()
-				hora_atual_obj = agora.time()
-				if hora_inicio <= hora_atual_obj <= hora_fim:
-					if not dia or dia == dia_atual:
-						turmas_filtradas.append(row)
-		except Exception:
-			continue
-	turmas_df_filtrado = pd.DataFrame(turmas_filtradas, columns=turmas_df.columns)
-	turmas = gerar_turmas_context(turmas_df_filtrado)
+	# agora = datetime.datetime.now()
+	# dia_atual = agora.strftime('%d/%m/%Y')
+	# hora_atual = agora.strftime('%H:%M')
+	# turmas_filtradas = []
+	# for idx in range(len(turmas_df)):
+	#     row = turmas_df.iloc[idx]
+	#     try:
+	#         inicio = row[3].strip() if len(row) > 3 else ''
+	#         fim = row[4].strip() if len(row) > 4 else ''
+	#         dia = row[9].strip() if len(row) > 9 else ''
+	#         if inicio and fim:
+	#             hora_inicio = datetime.datetime.strptime(inicio, '%H:%M').time()
+	#             hora_fim = datetime.datetime.strptime(fim, '%H:%M').time()
+	#             hora_atual_obj = agora.time()
+	#             if hora_inicio <= hora_atual_obj <= hora_fim:
+	#                 if not dia or dia == dia_atual:
+	#                     turmas_filtradas.append(row)
+	#     except Exception:
+	#         continue
+	# turmas_df_filtrado = pd.DataFrame(turmas_filtradas, columns=turmas_df.columns)
+	# turmas = gerar_turmas_context(turmas_df_filtrado)
+	turmas = gerar_turmas_context(turmas_df)
 	return render_template('selecionar_turma.html', turmas=turmas)
 
 # Recebe turma escolhida e redireciona para registro
