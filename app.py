@@ -50,7 +50,7 @@ def pagina_inicial():
 
 def buscar_turmas_google():
 	scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-	creds = ServiceAccountCredentials.from_json_keyfile_name('plated-field-474017-b8-e00d977b2612 copy.json', scope)
+	creds = ServiceAccountCredentials.from_json_keyfile_name('plated-field-474017-b8-e00d977b2612.json', scope)
 	client = gspread.authorize(creds)
 	sheet = client.open_by_key('1L3__zibMom2PjBN0nloVq44sM45OURncv4sxh8V6FuY')
 	ws = sheet.worksheet('CRONOGRAMA')
@@ -266,7 +266,6 @@ def registrar():
 		if proxima_turma:
 			msg += f' Próxima turma: {proxima_turma}'
 		return jsonify({'sucesso': False, 'mensagem': msg}), 200
-
 
 
 import os
