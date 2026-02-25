@@ -13,7 +13,7 @@ app = Flask(__name__)
 app.secret_key = 'chave-secreta-para-session'
 
 # Página inicial
-@app.route('/inicio', methods=['GET'])
+@app.route('/', methods=['GET'])
 def pagina_inicial():
 	html = '''
 	<!DOCTYPE html>
@@ -224,7 +224,6 @@ HTML_INDEX = '''
 </html>
 '''
 
-
 @app.route('/turmas', methods=['GET'])
 def escolher_turma():
 	import datetime
@@ -260,7 +259,8 @@ def selecionar_turma():
 		return redirect(url_for('escolher_turma'))
 	session['turma'] = turma
 	return redirect(url_for('pagina_cartinha'))
-# Página de bater cartinha
+
+# Página de escanear carteirinha
 @app.route('/cartinha', methods=['GET'])
 def pagina_cartinha():
 	html = '''
@@ -268,40 +268,52 @@ def pagina_cartinha():
 	<html lang="pt-br">
 	<head>
 		<meta charset="UTF-8">
-		<title>Bater Cartinha</title>
+		<title>Escanear Carteirinha</title>
 		<style>
 			body { background: #0A1E3F; color: #fff; font-family: Arial, sans-serif; text-align: center; }
 			.container { margin-top: 80px; }
-			.cartinha-btn {
-				background: #7A0B0B;
-				color: #fff;
-				border: none;
-				padding: 24px 60px;
-				font-size: 1.5em;
-				border-radius: 10px;
-				cursor: pointer;
-				transition: background 0.2s;
-			}
-			.cartinha-btn:hover { background: #9C1A1A; }
+			#resultado { margin-top: 40px; font-size: 1.5em; }
+			video { margin-top: 30px; border: 4px solid #7A0B0B; border-radius: 8px; }
 		</style>
 	</head>
 	<body>
 		<div class="container">
-			<h1>Bater Cartinha</h1>
-			<p>Turma selecionada: <b>{}</b></p>
-			<button class="cartinha-btn">BATER CARTINHA</button>
+			<h1>Escaneie sua Carteirinha</h1>
+			<video id="video" width="640" height="480" autoplay></video>
+			<div id="resultado"></div>
 		</div>
+		<script src="https://unpkg.com/@zxing/library@latest"></script>
+		<script>
+		const codeReader = new ZXing.BrowserQRCodeReader();
+		const video = document.getElementById('video');
+		const resultado = document.getElementById('resultado');
+		codeReader.decodeFromVideoDevice(null, 'video', (result, err) => {
+			if (result) {
+				resultado.innerText = `ID lido: ${result.text}`;
+				// Aqui você pode fazer um fetch para registrar presença automaticamente
+				fetch('/registrar', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ id: result.text })
+				})
+				.then(res => res.json())
+				.then(data => {
+					resultado.innerText = data.mensagem;
+				})
+				.catch(() => {
+					resultado.innerText = 'Erro ao registrar.';
+				});
+				codeReader.reset();
+			}
+		});
+		</script>
 	</body>
 	</html>
-	'''.format(session.get('turma', 'Nenhuma'))
+	'''
 	return render_template_string(html)
 
-# Página de registro de presença
-@app.route('/registro', methods=['GET'])
-def pagina_registro():
-	if 'turma' not in session:
-		return redirect(url_for('escolher_turma'))
-	return render_template_string(HTML_INDEX)
+
+# Página de registro de presença (desativada, só escaneamento agora)
 
 
 # API para registrar presença (usada pelo JS)
@@ -313,7 +325,7 @@ def registrar():
 		return jsonify({'sucesso': False, 'mensagem': 'ID não informado.'})
 	aluno = alunos.get(id_encontrado)
 	if not aluno:
-		return jsonify({'sucesso': False, 'mensagem': 'Aluno não encontrado.'}), 403
+		return jsonify({'sucesso': False, 'mensagem': 'Aluno não encontrado.'}), 
 	curso = aluno['curso']
 	turmas_df = buscar_turmas_google()
 	from datetime import datetime
