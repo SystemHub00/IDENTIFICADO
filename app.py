@@ -7,7 +7,7 @@ alunos = {
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
-from flask import Flask, request, jsonify, render_template_string, redirect, url_for, session
+from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 
 app = Flask(__name__)
 app.secret_key = 'chave-secreta-para-session'
@@ -15,38 +15,7 @@ app.secret_key = 'chave-secreta-para-session'
 # Página inicial
 @app.route('/', methods=['GET'])
 def pagina_inicial():
-	html = '''
-	<!DOCTYPE html>
-	<html lang="pt-br">
-	<head>
-		<meta charset="UTF-8">
-		<title>Bem-vindo</title>
-		<style>
-			body { background: #0A1E3F; color: #fff; font-family: Arial, sans-serif; text-align: center; }
-			.container { margin-top: 120px; }
-			.bemvindo-btn {
-				background: #7A0B0B;
-				color: #fff;
-				border: none;
-				padding: 32px 80px;
-				font-size: 2em;
-				border-radius: 12px;
-				cursor: pointer;
-				transition: background 0.2s;
-			}
-			.bemvindo-btn:hover { background: #9C1A1A; }
-		</style>
-	</head>
-	<body>
-		<div class="container">
-			<form method="get" action="/turmas">
-				<button class="bemvindo-btn" type="submit">BEM VINDO</button>
-			</form>
-		</div>
-	</body>
-	</html>
-	'''
-	return render_template_string(html)
+	return render_template('bemvindo.html')
 
 def buscar_turmas_google():
 	scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
@@ -58,82 +27,24 @@ def buscar_turmas_google():
 	df = pd.DataFrame(dados[1:], columns=dados[0])
 	return df
 
-def gerar_html_turmas(turmas_df):
-	html = '''<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-	<meta charset="UTF-8">
-	<title>Escolha a Turma</title>
-	<style>
-		body { background: #0A1E3F; color: #fff; font-family: Arial, sans-serif; text-align: center; }
-		.container { margin-top: 40px; }
-		.cards { display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; }
-		.card {
-			background: #16244d;
-			color: #fff;
-			border-radius: 12px;
-			box-shadow: 0 4px 16px #0006;
-			padding: 24px 18px;
-			width: 340px;
-			margin-bottom: 20px;
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-		}
-		.card h2 { font-size: 1.3em; margin-bottom: 8px; }
-		.card p { font-size: 1em; margin: 4px 0; }
-		.card button {
-			background: #7A0B0B;
-			color: #fff;
-			border: none;
-			padding: 12px 32px;
-			font-size: 1.1em;
-			border-radius: 8px;
-			cursor: pointer;
-			margin-top: 12px;
-			transition: background 0.2s;
-		}
-		.card button:hover { background: #9C1A1A; }
-		.filtro-form { margin-bottom: 30px; }
-		.filtro-form label { margin: 0 8px; }
-		.filtro-form input, .filtro-form select { padding: 6px; border-radius: 4px; border: none; }
-	</style>
-</head>
-<body>
-	<div class="container">
-		<h1>Escolha a Turma</h1>
-		<!-- Filtro automático removido, painel exibe turmas do horário/dia atual -->
-		<div class="cards">
-'''
+
+def gerar_turmas_context(turmas_df):
+	turmas = []
 	for idx in range(len(turmas_df)):
 		row = turmas_df.iloc[idx].tolist()
 		if len(row) > 13:
-			turma_nome = row[2]
-			horario = row[11]
-			local = row[12]
-			inicio = row[3]
-			fim = row[4]
-			vagas = row[6]
-			modalidade = row[10]
-			obs = row[13]
-			html += f'''
-			<form method="post" action="/selecionar_turma">
-				<div class="card">
-					<h2>{turma_nome}</h2>
-					<p><b>Início:</b> {inicio} | <b>Fim:</b> {fim}</p>
-					<p><b>Horário:</b> {horario}</p>
-					<p><b>Local:</b> {local}</p>
-					<p><b>Vagas:</b> {vagas} | <b>Modalidade:</b> {modalidade}</p>
-					<p><b>Obs:</b> {obs}</p>
-					<button type="submit" name="turma" value="{turma_nome} - {horario}">Selecionar</button>
-				</div>
-			</form>
-			'''
-	html += '''        </div>
-	</div>
-</body>
-</html>'''
-	return html
+			turma = {
+				'nome': row[2],
+				'horario': row[11],
+				'local': row[12],
+				'inicio': row[3],
+				'fim': row[4],
+				'vagas': row[6],
+				'modalidade': row[10],
+				'obs': row[13],
+			}
+			turmas.append(turma)
+	return turmas
 
 
 @app.route('/turmas', methods=['GET'])
@@ -160,8 +71,8 @@ def escolher_turma():
 		except Exception:
 			continue
 	turmas_df_filtrado = pd.DataFrame(turmas_filtradas, columns=turmas_df.columns)
-	html_turmas = gerar_html_turmas(turmas_df_filtrado)
-	return render_template_string(html_turmas)
+	turmas = gerar_turmas_context(turmas_df_filtrado)
+	return render_template('selecionar_turma.html', turmas=turmas)
 
 # Recebe turma escolhida e redireciona para registro
 @app.route('/selecionar_turma', methods=['POST'])
@@ -175,54 +86,7 @@ def selecionar_turma():
 # Página de escanear carteirinha
 @app.route('/cartinha', methods=['GET'])
 def pagina_cartinha():
-	html = '''
-	<!DOCTYPE html>
-	<html lang="pt-br">
-	<head>
-		<meta charset="UTF-8">
-		<title>Escanear Carteirinha</title>
-		<style>
-			body { background: #0A1E3F; color: #fff; font-family: Arial, sans-serif; text-align: center; }
-			.container { margin-top: 80px; }
-			#resultado { margin-top: 40px; font-size: 1.5em; }
-			video { margin-top: 30px; border: 4px solid #7A0B0B; border-radius: 8px; }
-		</style>
-	</head>
-	<body>
-		<div class="container">
-			<h1>Escaneie sua Carteirinha</h1>
-			<video id="video" width="640" height="480" autoplay></video>
-			<div id="resultado"></div>
-		</div>
-		<script src="https://unpkg.com/@zxing/library@latest"></script>
-		<script>
-		const codeReader = new ZXing.BrowserQRCodeReader();
-		const video = document.getElementById('video');
-		const resultado = document.getElementById('resultado');
-		codeReader.decodeFromVideoDevice(null, 'video', (result, err) => {
-			if (result) {
-				resultado.innerText = `ID lido: ${result.text}`;
-				// Aqui você pode fazer um fetch para registrar presença automaticamente
-				fetch('/registrar', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ id: result.text })
-				})
-				.then(res => res.json())
-				.then(data => {
-					resultado.innerText = data.mensagem;
-				})
-				.catch(() => {
-					resultado.innerText = 'Erro ao registrar.';
-				});
-				codeReader.reset();
-			}
-		});
-		</script>
-	</body>
-	</html>
-	'''
-	return render_template_string(html)
+	return render_template('ler_qrcode.html')
 
 
 # Página de registro de presença (desativada, só escaneamento agora)

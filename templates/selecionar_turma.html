@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Escolha a Turma</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body { background: #0A1E3F; color: #fff; font-family: Arial, sans-serif; text-align: center; }
+        .container { margin-top: 40px; }
+        .cards { display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; }
+        .card {
+            background: #16244d;
+            color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px #0006;
+            padding: 24px 18px;
+            width: 340px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .card h2 { font-size: 1.3em; margin-bottom: 8px; }
+        .card p { font-size: 1em; margin: 4px 0; }
+        .card button {
+            background: #7A0B0B;
+            color: #fff;
+            border: none;
+            padding: 12px 32px;
+            font-size: 1.1em;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: background 0.2s;
+        }
+        .card button:hover { background: #9C1A1A; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Escolha a Turma</h1>
+        <div class="cards">
+            {% for turma in turmas %}
+            <form method="post" action="/selecionar_turma">
+                <div class="card">
+                    <h2>{{ turma.nome }}</h2>
+                    <p><b>Início:</b> {{ turma.inicio }} | <b>Fim:</b> {{ turma.fim }}</p>
+                    <p><b>Horário:</b> {{ turma.horario }}</p>
+                    <p><b>Local:</b> {{ turma.local }}</p>
+                    <p><b>Vagas:</b> {{ turma.vagas }} | <b>Modalidade:</b> {{ turma.modalidade }}</p>
+                    <p><b>Obs:</b> {{ turma.obs }}</p>
+                    <button type="submit" name="turma" value="{{ turma.nome }} - {{ turma.horario }}">Selecionar</button>
+                </div>
+            </form>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>
