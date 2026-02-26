@@ -4,8 +4,8 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 
+
 app = Flask(__name__)
-app.secret_key = 'chave-secreta-para-session'
 
 
 # Função para registrar presença na planilha PAUTAS (POST)
@@ -22,7 +22,8 @@ def salvar_presenca_google(id_encontrado, turma):
 	creds = ServiceAccountCredentials.from_json_keyfile_name(cred_path, scope)
 	client = gspread.authorize(creds)
 	sheet = client.open_by_key('1modnQG15Cdz0Ubu9TDqsbLybzhINmLfyg4CdKl4DGW0')
-	ws = sheet.worksheet('PAUTAS')
+	aba_pautas = os.environ.get('GOOGLE_SHEETS_TAB_PAUTAS', 'PAUTAS')
+	ws = sheet.worksheet(aba_pautas)
 	# Garante que a presença será registrada sempre na primeira linha vazia abaixo dos dados existentes
 	valores = ws.get_all_values()
 	ultima_linha = len(valores) + 1
@@ -75,7 +76,8 @@ def buscar_turmas_google_sheet():
 	creds = ServiceAccountCredentials.from_json_keyfile_name(cred_path, scope)
 	client = gspread.authorize(creds)
 	sheet = client.open_by_key('1modnQG15Cdz0Ubu9TDqsbLybzhINmLfyg4CdKl4DGW0')
-	ws = sheet.worksheet('TURMAS')
+	aba_turmas = os.environ.get('GOOGLE_SHEETS_TAB_TURMAS', 'TURMAS')
+	ws = sheet.worksheet(aba_turmas)
 	dados = ws.get('A3:F20')
 	colunas = ['CURSOS', 'INICIO', 'FIM', 'HORÁRIO', 'LOCAL', 'OBSERVAÇÃO']
 	turmas = []
