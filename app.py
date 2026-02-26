@@ -7,7 +7,8 @@ from flask import Flask, request, jsonify, render_template, redirect, url_for, s
 app = Flask(__name__)
 app.secret_key = 'chave-secreta-para-session'
 
-# Função para registrar presença na planilha PAUTAS
+
+# Função para registrar presença na planilha PAUTAS (POST)
 def salvar_presenca_google(id_encontrado, turma):
 	import datetime
 	hora = datetime.datetime.now().strftime('%H:%M:%S')
@@ -22,7 +23,9 @@ def salvar_presenca_google(id_encontrado, turma):
 	client = gspread.authorize(creds)
 	sheet = client.open_by_key('1modnQG15Cdz0Ubu9TDqsbLybzhINmLfyg4CdKl4DGW0')
 	ws = sheet.worksheet('PAUTAS')
-	ultima_linha = len(ws.get_all_values()) + 1
+	# Garante que a presença será registrada sempre na primeira linha vazia abaixo dos dados existentes
+	valores = ws.get_all_values()
+	ultima_linha = len(valores) + 1
 	if ultima_linha < 2:
 		ultima_linha = 2
 	ws.insert_row(['SIM', id_encontrado, hora, turma], ultima_linha)
