@@ -1,5 +1,47 @@
 import os
 import csv
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+from flask import Flask, request, jsonify, render_template, redirect, url_for, session
+
+app = Flask(__name__)
+app.secret_key = 'chave-secreta-para-session'
+
+# Função para registrar presença na planilha PAUTAS
+def salvar_presenca_google(id_encontrado, turma):
+	import datetime
+	hora = datetime.datetime.now().strftime('%H:%M:%S')
+	scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+	cred_path = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS', 'identificador-488615-c1ab55e9b31b.json')
+	if not os.path.exists(cred_path):
+		creds_content = os.environ.get('GOOGLE_SHEETS_CREDS_CONTENT')
+		if creds_content:
+			with open(cred_path, 'w') as f:
+				f.write(creds_content)
+	creds = ServiceAccountCredentials.from_json_keyfile_name(cred_path, scope)
+	client = gspread.authorize(creds)
+	sheet = client.open_by_key('1modnQG15Cdz0Ubu9TDqsbLybzhINmLfyg4CdKl4DGW0')
+	ws = sheet.worksheet('PAUTAS')
+	ultima_linha = len(ws.get_all_values()) + 1
+	if ultima_linha < 2:
+		ultima_linha = 2
+	ws.insert_row(['SIM', id_encontrado, hora, turma], ultima_linha)
+
+# API para registrar presença
+@app.route('/registrar', methods=['POST'])
+def registrar():
+	data = request.get_json()
+	id_encontrado = data.get('id') if data else None
+	if not id_encontrado:
+		return jsonify({'sucesso': False, 'mensagem': 'ID não informado.'})
+	aluno = alunos.get(id_encontrado)
+	if not aluno:
+		return jsonify({'sucesso': False, 'mensagem': 'Aluno não encontrado.'})
+	turma = aluno['curso']
+	salvar_presenca_google(id_encontrado, turma)
+	return jsonify({'sucesso': True, 'mensagem': f'Presença registrada para o curso: {turma}'}), 200
+import os
+import csv
 alunos = {
 	"123456789101": {"nome": "lucas", "curso": "administração"}
 }
