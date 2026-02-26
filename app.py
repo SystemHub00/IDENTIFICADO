@@ -17,65 +17,33 @@ app.secret_key = 'chave-secreta-para-session'
 def pagina_inicial():
 	return render_template('bemvindo.html')
 
-def buscar_turmas_google():
+
+def buscar_turmas_google_sheet():
+	# Lê as turmas da planilha Google correta
 	scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-	creds = ServiceAccountCredentials.from_json_keyfile_name('plated-field-474017-b8-e00d977b2612.json', scope)
+	cred_path = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS', 'identificador-488615-c1ab55e9b31b.json')
+	creds = ServiceAccountCredentials.from_json_keyfile_name(cred_path, scope)
 	client = gspread.authorize(creds)
-	sheet = client.open_by_key('1M4p8VgUiqvER8PPb0wttqKl7VfxEy7qtShKEWUbVx8M')
-	ws = sheet.worksheet('MAPA DE TURMAS')
-	dados = ws.get('B7:N20')
-	colunas = [
-		'BLOCO', 'CURSOS', 'INICIO', 'FIM', 'DURACAO', 'VAGAS', 'CONVERSAO',
-		'MODALIDADE', 'HORARIO', 'LOCAL', 'OBSERVACAO'
-	]
-	df = pd.DataFrame(dados, columns=colunas)
-	return df
-
-
-def gerar_turmas_context(turmas_df):
+	sheet = client.open_by_key('1modnQG15Cdz0Ubu9TDqsbLybzhINmLfyg4CdKl4DGW0')
+	ws = sheet.worksheet('TURMAS')
+	dados = ws.get('A3:F20')
+	colunas = ['CURSOS', 'INICIO', 'FIM', 'HORÁRIO', 'LOCAL', 'OBSERVAÇÃO']
 	turmas = []
-	for idx in range(len(turmas_df)):
-		row = turmas_df.iloc[idx]
-		turma = {
-			'nome': row['CURSOS'],
-			'inicio': row['INICIO'],
-			'fim': row['FIM'],
-			'vagas': row['VAGAS'],
-			'modalidade': row['MODALIDADE'],
-			'local': row['LOCAL'],
-			'horario': row['HORARIO'],
-			'obs': row['OBSERVACAO'],
-		}
+	for row in dados:
+		if len(row) < 6:
+			# Preenche campos faltantes com vazio
+			row += [''] * (6 - len(row))
+		turma = dict(zip(colunas, row))
 		turmas.append(turma)
 	return turmas
 
 
+
+
+
 @app.route('/turmas', methods=['GET'])
 def escolher_turma():
-	import datetime
-	turmas_df = buscar_turmas_google()
-	# agora = datetime.datetime.now()
-	# dia_atual = agora.strftime('%d/%m/%Y')
-	# hora_atual = agora.strftime('%H:%M')
-	# turmas_filtradas = []
-	# for idx in range(len(turmas_df)):
-	#     row = turmas_df.iloc[idx]
-	#     try:
-	#         inicio = row[3].strip() if len(row) > 3 else ''
-	#         fim = row[4].strip() if len(row) > 4 else ''
-	#         dia = row[9].strip() if len(row) > 9 else ''
-	#         if inicio and fim:
-	#             hora_inicio = datetime.datetime.strptime(inicio, '%H:%M').time()
-	#             hora_fim = datetime.datetime.strptime(fim, '%H:%M').time()
-	#             hora_atual_obj = agora.time()
-	#             if hora_inicio <= hora_atual_obj <= hora_fim:
-	#                 if not dia or dia == dia_atual:
-	#                     turmas_filtradas.append(row)
-	#     except Exception:
-	#         continue
-	# turmas_df_filtrado = pd.DataFrame(turmas_filtradas, columns=turmas_df.columns)
-	# turmas = gerar_turmas_context(turmas_df_filtrado)
-	turmas = gerar_turmas_context(turmas_df)
+	turmas = buscar_turmas_google_sheet()
 	return render_template('selecionar_turma.html', turmas=turmas)
 
 # Recebe turma escolhida e redireciona para registro
@@ -106,33 +74,10 @@ def registrar():
 	aluno = alunos.get(id_encontrado)
 	if not aluno:
 		return jsonify({'sucesso': False, 'mensagem': 'Aluno não encontrado.'}), 
-	curso = aluno['curso']
-	turmas_df = buscar_turmas_google()
-	from datetime import datetime
-	agora = datetime.now().strftime('%H:%M')
-	turma_encontrada = None
-	proxima_turma = None
-	for idx in range(len(turmas_df)):
-		row = turmas_df.iloc[idx]
-		turma_nome = row['CURSOS']
-		horario = row['HORARIO']
-		inicio = row['INICIO']
-		fim = row['FIM']
-		if curso.lower() in turma_nome.lower():
-			# Verifica se o horário atual está dentro do horário da turma
-			if inicio <= agora <= fim:
-				turma_encontrada = f"{turma_nome} - {horario}"
-				break
-			elif not proxima_turma or inicio > agora:
-				proxima_turma = f"{turma_nome} - {horario} (Início: {inicio})"
-	if turma_encontrada:
-		salvar_presenca_local(id_encontrado, turma_encontrada)
-		return jsonify({'sucesso': True, 'mensagem': f'Presença registrada na turma: {turma_encontrada}'}), 200
-	else:
-		msg = f'Não há turma de {curso} para você neste horário.'
-		if proxima_turma:
-			msg += f' Próxima turma: {proxima_turma}'
-		return jsonify({'sucesso': False, 'mensagem': msg}), 200
+	# Não busca mais turmas, apenas registra presença no Sheets
+	turma = aluno['curso']
+	salvar_presenca_local(id_encontrado, turma)
+	return jsonify({'sucesso': True, 'mensagem': f'Presença registrada para o curso: {turma}'}), 200
 
 
 import os
@@ -184,15 +129,18 @@ def garantir_cabecalho_csv():
 def salvar_presenca_local(id_encontrado, turma):
 	import datetime
 	hora = datetime.datetime.now().strftime('%H:%M:%S')
-	csv_path = r"C:\Users\lucas\OneDrive\Documentos\IDENTIFICADO\PRESENÇA.csv"
-	# Garante cabeçalho
-	if not os.path.exists(csv_path) or os.path.getsize(csv_path) == 0:
-		with open(csv_path, 'w', newline='', encoding='utf-8') as f:
-			writer = csv.writer(f)
-			writer.writerow(['PRESENTE', 'ID', 'HORA', 'TURMA'])
-	with open(csv_path, 'a', newline='', encoding='utf-8') as f:
-		writer = csv.writer(f)
-		writer.writerow(['SIM', id_encontrado, hora, turma])
+	# Salvar presença diretamente no Google Sheets correto
+	scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+	cred_path = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS', 'identificador-488615-c1ab55e9b31b.json')
+	creds = ServiceAccountCredentials.from_json_keyfile_name(cred_path, scope)
+	client = gspread.authorize(creds)
+	sheet = client.open_by_key('1modnQG15Cdz0Ubu9TDqsbLybzhINmLfyg4CdKl4DGW0')
+	ws = sheet.worksheet('PAUTAS')
+	# Sempre lançar a partir da linha 2 (após o cabeçalho)
+	ultima_linha = len(ws.get_all_values()) + 1
+	if ultima_linha < 2:
+		ultima_linha = 2
+	ws.insert_row(['SIM', id_encontrado, hora, turma], ultima_linha)
 
 
 def enviar_linha_para_planilha(presente, id_encontrado):
@@ -328,3 +276,7 @@ def identifica():
 		enviar_linha_para_planilha('SIM', id_encontrado_valido)
 		return id_encontrado_valido
 	return None
+
+
+if __name__ == "__main__":
+	app.run(debug=True)

@@ -43,13 +43,12 @@
             {% for turma in turmas %}
             <form method="post" action="/selecionar_turma">
                 <div class="card">
-                    <h2>{{ turma.nome }}</h2>
-                    <p><b>Início:</b> {{ turma.inicio }} | <b>Fim:</b> {{ turma.fim }}</p>
-                    <p><b>Horário:</b> {{ turma.horario }}</p>
-                    <p><b>Local:</b> {{ turma.local }}</p>
-                    <p><b>Vagas:</b> {{ turma.vagas }} | <b>Modalidade:</b> {{ turma.modalidade }}</p>
-                    <p><b>Obs:</b> {{ turma.obs }}</p>
-                    <button type="submit" name="turma" value="{{ turma.nome }} - {{ turma.horario }}">Selecionar</button>
+                    <h2>{{ turma.CURSOS }}</h2>
+                    <p><b>Início:</b> {{ turma.INICIO }} | <b>Fim:</b> {{ turma.FIM }}</p>
+                    <p><b>Horário:</b> {{ turma['HORÁRIO'] }}</p>
+                    <p><b>Local:</b> {{ turma.LOCAL }}</p>
+                    <p><b>Obs:</b> {{ turma['OBSERVAÇÃO'] }}</p>
+                    <button type="submit" name="turma" value="{{ turma.CURSOS }} - {{ turma['HORÁRIO'] }}">Selecionar</button>
                 </div>
             </form>
             {% endfor %}

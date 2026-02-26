@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+
+# VSCode
+.vscode/
+
+# Sistema
+PRESENÇA.csv
+*.json

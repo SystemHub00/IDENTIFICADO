@@ -19,13 +19,22 @@ Este projeto é um sistema web para controle de presença e seleção de turmas,
    ```
 3. Acesse `http://localhost:10000/inicio` no navegador.
 
+
 ## Deploy no Render
-- O projeto já possui `requirements.txt` e `Procfile`.
-- Use o comando:
-  ```
-  gunicorn app:app
-  ```
-  conforme definido no Procfile.
+
+1. Faça upload de todos os arquivos do projeto, exceto o .venv e arquivos locais.
+2. No painel do Render, crie um novo serviço Web e aponte para este repositório.
+3. O Render detecta automaticamente o `requirements.txt` e o `Procfile`.
+4. Adicione a chave de credenciais JSON (identificador-488615-c1ab55e9b31b.json) como um arquivo no projeto. **Nunca exponha publicamente em repositórios públicos!**
+5. Se preferir, use variáveis de ambiente para o caminho da chave JSON e o ID da planilha:
+    - Exemplo no Render: `GOOGLE_APPLICATION_CREDENTIALS=identificador-488615-c1ab55e9b31b.json`
+    - Exemplo no código:
+       ```python
+       cred_path = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS', 'identificador-488615-c1ab55e9b31b.json')
+       creds = ServiceAccountCredentials.from_json_keyfile_name(cred_path, scope)
+       ```
+6. O comando de start já está correto: `gunicorn app:app`
+7. O serviço ficará disponível em uma URL fornecida pelo Render.
 
 ## Estrutura
 - `app.py`: Código principal
