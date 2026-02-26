@@ -21,6 +21,12 @@ def buscar_turmas_google_sheet():
 	# Lê as turmas da planilha Google correta
 	scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 	cred_path = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS', 'identificador-488615-c1ab55e9b31b.json')
+	# Se não existir o arquivo, cria a partir da variável de ambiente GOOGLE_SHEETS_CREDS_CONTENT
+	if not os.path.exists(cred_path):
+		creds_content = os.environ.get('GOOGLE_SHEETS_CREDS_CONTENT')
+		if creds_content:
+			with open(cred_path, 'w') as f:
+				f.write(creds_content)
 	creds = ServiceAccountCredentials.from_json_keyfile_name(cred_path, scope)
 	client = gspread.authorize(creds)
 	sheet = client.open_by_key('1modnQG15Cdz0Ubu9TDqsbLybzhINmLfyg4CdKl4DGW0')
