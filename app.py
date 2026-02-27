@@ -25,8 +25,14 @@ def salvar_presenca_google(id_encontrado, turma):
 # API para registrar presença
 @app.route('/registrar', methods=['POST'])
 def registrar():
-	data = request.get_json()
-	id_encontrado = data.get('id') if data else None
+	# Tenta pegar o id do JSON, se não vier, tenta do form
+	id_encontrado = None
+	if request.is_json:
+		data = request.get_json(silent=True)
+		if data:
+			id_encontrado = data.get('id')
+	if not id_encontrado:
+		id_encontrado = request.form.get('id')
 	if not id_encontrado:
 		return jsonify({'sucesso': False, 'mensagem': 'ID não informado.'})
 	aluno = alunos.get(id_encontrado)
