@@ -54,9 +54,7 @@ alunos = {
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
-from flask import Flask, request, jsonify, render_template, redirect, url_for, session
-
-app = Flask(__name__)
+# ...existing code...
 app.secret_key = 'chave-secreta-para-session'
 
 # Página inicial
