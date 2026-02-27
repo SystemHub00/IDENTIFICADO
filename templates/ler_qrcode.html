@@ -30,12 +30,24 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: result.text })
             })
-            .then(res => res.json())
-            .then(data => {
-                resultado.innerText = data.mensagem;
+            .then(async res => {
+                let data;
+                try {
+                    data = await res.json();
+                } catch (e) {
+                    resultado.innerText = 'Erro inesperado: ' + e;
+                    return;
+                }
+                resultado.innerText = data.mensagem || 'Erro desconhecido.';
             })
-            .catch(() => {
-                resultado.innerText = 'Erro ao registrar.';
+            .catch(async err => {
+                // Tenta extrair mensagem de erro do corpo da resposta
+                try {
+                    const res = await err.response.json();
+                    resultado.innerText = res.mensagem || 'Erro ao registrar.';
+                } catch {
+                    resultado.innerText = 'Erro ao registrar.';
+                }
             });
             codeReader.reset();
         }

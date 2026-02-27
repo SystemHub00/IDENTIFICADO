@@ -4,27 +4,18 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 
-
 app = Flask(__name__)
-
 
 # Função para registrar presença na planilha PAUTAS (POST)
 def salvar_presenca_google(id_encontrado, turma):
 	import datetime
 	hora = datetime.datetime.now().strftime('%H:%M:%S')
 	scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-	cred_path = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS', 'identificador-488615-c1ab55e9b31b.json')
-	if not os.path.exists(cred_path):
-		creds_content = os.environ.get('GOOGLE_SHEETS_CREDS_CONTENT')
-		if creds_content:
-			with open(cred_path, 'w') as f:
-				f.write(creds_content)
+	cred_path = r'C:\Users\lucas\OneDrive\Documentos\IDENTIFICADO\identificador-488615-c1ab55e9b31b.json'
 	creds = ServiceAccountCredentials.from_json_keyfile_name(cred_path, scope)
 	client = gspread.authorize(creds)
-	sheet = client.open_by_key('1modnQG15Cdz0Ubu9TDqsbLybzhINmLfyg4CdKl4DGW0')
-	aba_pautas = os.environ.get('GOOGLE_SHEETS_TAB_PAUTAS', 'PAUTAS')
-	ws = sheet.worksheet(aba_pautas)
-	# Garante que a presença será registrada sempre na primeira linha vazia abaixo dos dados existentes
+	sheet = client.open_by_key('1z0XFFhXFOaeeVLNigzAK0MwmtbYBJ-i9LhwHlY1x7OA')
+	ws = sheet.worksheet('PRESENÇA')
 	valores = ws.get_all_values()
 	ultima_linha = len(valores) + 1
 	if ultima_linha < 2:
