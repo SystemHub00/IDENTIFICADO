@@ -11,7 +11,12 @@ def salvar_presenca_google(id_encontrado, turma):
 	import datetime
 	hora = datetime.datetime.now().strftime('%H:%M:%S')
 	scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-	cred_path = r'C:\Users\lucas\OneDrive\Documentos\IDENTIFICADO\identificador-488615-c1ab55e9b31b.json'
+	cred_path = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS', 'identificador-488615-c1ab55e9b31b.json')
+	if not os.path.exists(cred_path):
+		creds_content = os.environ.get('GOOGLE_SHEETS_CREDS_CONTENT')
+		if creds_content:
+			with open(cred_path, 'w') as f:
+				f.write(creds_content)
 	creds = ServiceAccountCredentials.from_json_keyfile_name(cred_path, scope)
 	client = gspread.authorize(creds)
 	sheet = client.open_by_key('1z0XFFhXFOaeeVLNigzAK0MwmtbYBJ-i9LhwHlY1x7OA')
